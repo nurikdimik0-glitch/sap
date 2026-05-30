@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление студентами - Админ панель</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #1a1a2e;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #1a1a2e;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+        .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+        .btn-primary {
+            background: #1a1a2e;
+            color: white;
+        }
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+        .student-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .student-table th, .student-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .student-table th {
+            background: #f7f7f7;
+            font-weight: bold;
+            color: #333;
+        }
+        .student-table tr:hover {
+            background: #f7f7f7;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin: 2px;
+        }
+        .badge-warning {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        .badge-success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+        .filter-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filter-bar select, .filter-bar input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .stats {
+            background: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .group-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        .success-message {
+            background: #c6f6d5;
+            color: #276749;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .queue-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>👥 Управление студентами</h1>
+                <p>Просмотр, удаление и очистка данных студентов</p>
+            </div>
+            <div>
+                <a href="/admin/dashboard" class="btn btn-secondary">← Назад в панель</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⚡ Быстрые действия</h2>
+            <div class="action-buttons">
+                <button onclick="if(confirm('ВНИМАНИЕ! Это удалит ВСЕХ студентов и их записи. Продолжить?')) window.location.href='/admin/clear_all_students'" class="btn btn-danger">🗑️ Удалить ВСЕХ студентов</button>
+            </div>
+
+            <div class="group-buttons">
+                <strong>Удалить студентов по группе:</strong>
+                <button onclick="if(confirm('Удалить всех студентов группы ФМ-11-22?')) window.location.href='/admin/clear_graduated/ФМ-11-22'" class="btn btn-warning btn-sm">ФМ-11-22</button>
+                <button onclick="if(confirm('Удалить всех студентов группы ФМ-12-22?')) window.location.href='/admin/clear_graduated/ФМ-12-22'" class="btn btn-warning btn-sm">ФМ-12-22</button>
+                <button onclick="if(confirm('Удалить всех студентов группы ФМ-12-23?')) window.location.href='/admin/clear_graduated/ФМ-12-23'" class="btn btn-warning btn-sm">ФМ-12-23</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📋 Список студентов</h2>
+
+            <div class="filter-bar">
+                <input type="text" id="searchInput" placeholder="🔍 Поиск по имени..." onkeyup="filterTable()">
+                <select id="groupFilter" onchange="filterTable()">
+                    <option value="">Все группы</option>
+                    <option value="ФМ-11-22">ФМ-11-22</option>
+                    <option value="ФМ-12-22">ФМ-12-22</option>
+                    <option value="ФМ-12-23">ФМ-12-23</option>
+                </select>
+                <select id="queueFilter" onchange="filterTable()">
+                    <option value="">Все статусы</option>
+                    <option value="active">В очереди</option>
+                    <option value="inactive">Не в очереди</option>
+                </select>
+            </div>
+
+            <div class="stats" id="stats">
+                Всего студентов: <strong>{{ students|length }}</strong>
+            </div>
+
+            {% if students %}
+            <table class="student-table" id="studentTable">
+                <thead>
+                    <tr>
+                        <th>№</th>
+                        <th>ФИО</th>
+                        <th>Логин</th>
+                        <th>Группа</th>
+                        <th>Подгруппа</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr data-group="{{ student.group }}" data-has-queue="{{ student.has_active_queues }}" data-name="{{ student.fullname|lower }}">
+                        <td>{{ loop.index }}</td>
+                        <td>{{ student.fullname }}</td>
+                        <td>{{ student.username }}</td>
+                        <td>{{ student.group }}</td>
+                        <td>{{ student.subgroup }}</td>
+                        <td>
+                            {% if student.has_active_queues %}
+                                <span class="badge badge-warning">В очереди</span>
+                                <div class="queue-info">
+                                    {% for q in student.active_queues %}
+                                        {{ q.teacher }}: №{{ q.position }} ({{ q.date }})<br>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span class="badge badge-success">Свободен</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button onclick="if(confirm('Удалить студента {{ student.fullname }}? Все его записи будут удалены.')) window.location.href='/admin/delete_user/{{ student.username }}'" class="btn btn-danger btn-sm">Удалить</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p style="text-align: center; color: #666; padding: 40px;">📭 Нет зарегистрированных студентов</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        function filterTable() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const groupValue = document.getElementById('groupFilter').value;
+            const queueValue = document.getElementById('queueFilter').value;
+
+            const rows = document.querySelectorAll('#studentTable tbody tr');
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const group = row.getAttribute('data-group') || '';
+                const hasQueue = row.getAttribute('data-has-queue') === 'true';
+
+                let show = true;
+
+                if (searchValue && !name.includes(searchValue)) show = false;
+                if (groupValue && group !== groupValue) show = false;
+                if (queueValue === 'active' && !hasQueue) show = false;
+                if (queueValue === 'inactive' && hasQueue) show = false;
+
+                if (show) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const totalRows = rows.length;
+            document.getElementById('stats').innerHTML = `Показано студентов: <strong>${visibleCount}</strong> из ${totalRows}`;
+        }
+    </script>
+</body>
+</html>

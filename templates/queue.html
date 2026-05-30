@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Очередь к {{ teacher_name }} - Электронная очередь</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .btn-print {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .btn-print:hover {
+            background: #38a169;
+        }
+        .filters {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 15px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+        }
+        .filter-group select, .filter-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 150px;
+        }
+        .btn-filter {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-reset {
+            background: #718096;
+        }
+        .queue-list {
+            list-style: none;
+        }
+        .queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f7f7f7;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+        .position {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+            width: 60px;
+        }
+        .student-info {
+            flex: 1;
+        }
+        .student-name {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .student-group {
+            color: #666;
+        }
+        .empty {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+        }
+        .filter-summary {
+            background: #e2e8f0;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="button-group">
+                <div>
+                    <h1>📋 {{ teacher_name }}</h1>
+                    <div class="subtitle">Текущая очередь на сдачу лабораторных работ</div>
+                </div>
+                <button onclick="printQueue()" class="btn-print">🖨️ Распечатать очередь</button>
+            </div>
+
+            <form method="GET" action="/queue/{{ teacher_id }}" id="filterForm">
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Группа:</label>
+                        <select name="group">
+                            <option value="">Все группы</option>
+                            <option value="ФМ-11-22" {% if request.args.get('group') == 'ФМ-11-22' %}selected{% endif %}>ФМ-11-22</option>
+                            <option value="ФМ-12-22" {% if request.args.get('group') == 'ФМ-12-22' %}selected{% endif %}>ФМ-12-22</option>
+                            <option value="ФМ-12-23" {% if request.args.get('group') == 'ФМ-12-23' %}selected{% endif %}>ФМ-12-23</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Подгруппа:</label>
+                        <select name="subgroup">
+                            <option value="">Все подгруппы</option>
+                            <option value="1" {% if request.args.get('subgroup') == '1' %}selected{% endif %}>1 подгруппа</option>
+                            <option value="2" {% if request.args.get('subgroup') == '2' %}selected{% endif %}>2 подгруппа</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Дата сдачи:</label>
+                        <input type="date" name="date" value="{{ request.args.get('date', '') }}">
+                    </div>
+                    <div class="filter-group">
+                        <button type="submit" class="btn-filter">🔍 Показать</button>
+                    </div>
+                    <div class="filter-group">
+                        <a href="/queue/{{ teacher_id }}" class="btn-filter btn-reset">🔄 Сбросить</a>
+                    </div>
+                </div>
+            </form>
+
+            {% set filter_group = request.args.get('group', '') %}
+            {% set filter_subgroup = request.args.get('subgroup', '') %}
+            {% set filter_date = request.args.get('date', '') %}
+            {% set filtered_queue = queue %}
+            {% if filter_group %}
+                {% set filtered_queue = filtered_queue | selectattr("group", "equalto", filter_group) | list %}
+            {% endif %}
+            {% if filter_subgroup %}
+                {% set filtered_queue = filtered_queue | selectattr("subgroup", "equalto", filter_subgroup) | list %}
+            {% endif %}
+            {% if filter_date %}
+                {% set filtered_queue = filtered_queue | selectattr("date", "equalto", filter_date) | list %}
+            {% endif %}
+
+            {% if filter_group or filter_subgroup or filter_date %}
+            <div class="filter-summary">
+                📊 Фильтр:
+                {% if filter_group %} Группа: <strong>{{ filter_group }}</strong>{% endif %}
+                {% if filter_subgroup %} | Подгруппа: <strong>{{ filter_subgroup }}</strong>{% endif %}
+                {% if filter_date %} | Дата: <strong>{{ filter_date }}</strong>{% endif %}
+                | Найдено: <strong>{{ filtered_queue|length }}</strong> из {{ queue|length }}
+            </div>
+            {% endif %}
+
+            {% if filtered_queue %}
+            <ul class="queue-list">
+                {% for student in filtered_queue %}
+                <li class="queue-item">
+                    <div class="position">#{{ loop.index }}</div>
+                    <div class="student-info">
+                        <div class="student-name">{{ student.fullname }}</div>
+                        <div class="student-group">Группа: {{ student.group }} | Подгруппа: {{ student.subgroup }}</div>
+                        <div style="font-size: 12px; color: #999;">📅 {{ student.date }}</div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty">
+                📭 Нет студентов в очереди с выбранными фильтрами.
+            </div>
+            {% endif %}
+
+            <a href="/" class="back-link">← На главную</a>
+        </div>
+    </div>
+    <script>
+        function printQueue() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const group = urlParams.get('group') || '';
+            const subgroup = urlParams.get('subgroup') || '';
+            const date = urlParams.get('date') || '';
+
+            let printUrl = '/print_public_queue/{{ teacher_id }}?';
+            if (group) printUrl += 'group=' + group + '&';
+            if (subgroup) printUrl += 'subgroup=' + subgroup + '&';
+            if (date) printUrl += 'date=' + date;
+
+            const printWindow = window.open(printUrl, '_blank');
+            printWindow.focus();
+        }
+    </script>
+</body>
+</html>

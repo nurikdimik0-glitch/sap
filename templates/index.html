@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электронная очередь - ФПМФиИТ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .search-box {
+            margin-bottom: 25px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            transition: border-color 0.3s;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .teacher-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .teacher-card {
+            background: #f7f7f7;
+            padding: 15px;
+            border-radius: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            color: #333;
+        }
+        .teacher-card:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-3px);
+        }
+        .teacher-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        .teacher-subject {
+            font-size: 13px;
+            color: #666;
+        }
+        .teacher-card:hover .teacher-subject {
+            color: rgba(255,255,255,0.8);
+        }
+        .count-info {
+            text-align: right;
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 14px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-secondary {
+            background: #48bb78;
+            color: white;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 ФПМФиИТ</h1>
+        <div class="subtitle">Электронная очередь на сдачу лабораторных работ и зачётов</div>
+
+        <div class="card">
+            <div class="btn-group">
+                <a href="/login" class="btn btn-primary">🔐 Вход</a>
+                <a href="/register" class="btn btn-secondary">📝 Регистрация</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="margin-bottom: 20px; color: #667eea;">👨‍🏫 Преподаватели</h2>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Поиск по имени преподавателя или дисциплине..." onkeyup="filterTeachers()">
+            </div>
+
+            <div class="count-info" id="countInfo">
+                Всего преподавателей: <strong>{{ teachers|length }}</strong>
+            </div>
+
+            <div class="teacher-grid" id="teacherGrid">
+                {% for teacher_id, teacher_name in teachers.items() %}
+                <a href="/queue/{{ teacher_id }}" class="teacher-card" data-name="{{ teacher_name|lower }}">
+                    <div class="teacher-name">{{ teacher_name }}</div>
+                    <div class="teacher-subject">
+                        {% if '(' in teacher_name and ')' in teacher_name %}
+                            {{ teacher_name.split('(')[1].split(')')[0] }}
+                        {% endif %}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterTeachers() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.teacher-card');
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name') || '';
+                if (name.includes(searchValue)) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            document.getElementById('countInfo').innerHTML = `Найдено преподавателей: <strong>${visibleCount}</strong> из ${cards.length}`;
+
+            const grid = document.getElementById('teacherGrid');
+            const noResults = document.querySelector('.no-results');
+            if (visibleCount === 0 && !noResults) {
+                const div = document.createElement('div');
+                div.className = 'no-results';
+                div.innerHTML = '🔍 Ничего не найдено. Попробуйте другой поисковый запрос.';
+                div.style.gridColumn = '1 / -1';
+                grid.appendChild(div);
+            } else if (visibleCount > 0 && noResults) {
+                noResults.remove();
+            }
+        }
+    </script>
+</body>
+</html>

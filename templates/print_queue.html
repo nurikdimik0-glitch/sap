@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Печать очереди - {{ teacher_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            padding: 20px;
+        }
+        .print-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .print-header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        .print-header h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+        .print-header h2 {
+            font-size: 18px;
+            margin: 5px 0;
+            color: #333;
+        }
+        .print-header .date {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .filter-info {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-left: 3px solid #667eea;
+            font-size: 14px;
+        }
+        .print-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .print-table th {
+            background: #f0f0f0;
+            border: 1px solid #000;
+            padding: 10px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .print-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        .print-table .number {
+            text-align: center;
+            width: 50px;
+        }
+        .print-footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 50px;
+            font-size: 16px;
+            color: #666;
+        }
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .filter-info {
+                background: #f9f9f9;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-table th {
+                background: #f0f0f0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <div class="print-header">
+            <h1>📋 {{ teacher_name }}</h1>
+            <h2>Очередь на сдачу лабораторных работ</h2>
+            <div class="date">Дата печати: {{ now() }}</div>
+        </div>
+
+        {% if filter_group or filter_subgroup or filter_date %}
+        <div class="filter-info">
+            <strong>📊 Применённые фильтры:</strong><br>
+            {% if filter_group %} Группа: {{ filter_group }}{% endif %}
+            {% if filter_subgroup %} | Подгруппа: {{ filter_subgroup }}{% endif %}
+            {% if filter_date %} | Дата сдачи: {{ filter_date }}{% endif %}
+            | <strong>Всего записей: {{ total_count }}</strong>
+        </div>
+        {% endif %}
+
+        {% if queue %}
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th class="number">№</th>
+                    <th>ФИО студента</th>
+                    <th>Группа</th>
+                    <th>Подгруппа</th>
+                    <th>Дата сдачи</th>
+                    <th>Время записи</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in queue %}
+                <tr>
+                    <td class="number">{{ loop.index }}</td>
+                    <td>{{ student.fullname }}</td>
+                    <td>{{ student.group }}</td>
+                    <td>{{ student.subgroup }} подгруппа</td>
+                    <td>{{ student.date }}</td>
+                    <td>{{ student.time }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-message">
+            📭 Нет записей в очереди с выбранными фильтрами.
+        </div>
+        {% endif %}
+
+        <div class="print-footer">
+            <p>Электронная очередь для сдачи лабораторных работ</p>
+            <p>© {{ now().split()[0][:4] }} | Система автоматической очереди</p>
+        </div>
+    </div>
+    <script>
+        window.onload = function() {
+            window.print();
+            setTimeout(function() {
+                window.close();
+            }, 500);
+        }
+    </script>
+</body>
+</html>

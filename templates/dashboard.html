@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой кабинет - Электронная очередь</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .queue-card {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        .queue-card-warning {
+            background: #fff3e0;
+            border-left: 4px solid #ed8936;
+        }
+        .position {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-danger {
+            background: #e53e3e;
+            color: white;
+        }
+        .btn-logout {
+            background: #718096;
+            color: white;
+        }
+        .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+        .teachers-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .teacher-card {
+            background: #f7f7f7;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+        }
+        .teacher-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .date-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h2>👋 {{ fullname }}</h2>
+                <p>Группа: {{ group }} | Подгруппа: {{ subgroup }} | Логин: {{ user }}</p>
+            </div>
+            <a href="/logout" class="btn btn-logout">Выйти</a>
+        </div>
+
+        <div class="card">
+            <h2>📌 Мои записи</h2>
+            {% if my_queues %}
+                {% for queue in my_queues %}
+                <div class="queue-card {% if queue.position == 1 %}queue-card-warning{% endif %}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                        <div>
+                            <strong>{{ queue.teacher_name }}</strong>
+                            <div>📅 Дата сдачи: <strong style="color: #667eea;">{{ queue.date }}</strong></div>
+                            <div>Позиция в очереди: <span class="position">{{ queue.position }}</span></div>
+                            <div style="font-size: 12px; color: #666;">Записан: {{ queue.time }}</div>
+                        </div>
+                        <a href="/leave_specific_queue/{{ queue.teacher_id }}?date={{ queue.date }}" class="btn btn-danger btn-sm">Отменить запись</a>
+                    </div>
+                    {% if queue.position == 1 %}
+                    <div style="margin-top: 10px; color: #ed8936; font-size: 14px;">
+                        ⚡ Вы следующий! Будьте готовы.
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: #666;">У вас нет активных записей.</p>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <h2>📋 Записаться в очередь</h2>
+            <p style="margin-bottom: 15px;">Выберите преподавателя и дату сдачи:</p>
+            <div class="teachers-list">
+                {% for teacher_id, teacher_name in teachers.items() %}
+                <div class="teacher-card">
+                    <div class="teacher-name">{{ teacher_name }}</div>
+                    <input type="date" id="date_{{ teacher_id }}" class="date-input" min="{{ today }}">
+                    <button onclick="joinQueue('{{ teacher_id }}')" class="btn btn-primary" style="margin-top: 10px; width: 100%;">📅 Записаться</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>ℹ️ Как это работает</h3>
+            <ul style="margin-left: 20px; line-height: 1.8;">
+                <li>✅ Выберите преподавателя и ДАТУ сдачи лабораторной работы</li>
+                <li>✅ Можно записаться к нескольким преподавателям в разные даты</li>
+                <li>✅ Следите за своей позицией в каждой очереди</li>
+                <li>✅ Преподаватель вызывает студентов по очереди</li>
+                <li>✅ После прошедшей даты запись автоматически удаляется</li>
+            </ul>
+        </div>
+    </div>
+    <script>
+        function joinQueue(teacherId) {
+            const dateInput = document.getElementById('date_' + teacherId);
+            const selectedDate = dateInput.value;
+            if (!selectedDate) {
+                alert('Пожалуйста, выберите дату сдачи!');
+                return;
+            }
+            const today = new Date().toISOString().split('T')[0];
+            if (selectedDate < today) {
+                alert('Нельзя выбрать прошедшую дату!');
+                return;
+            }
+            window.location.href = '/join_queue/' + teacherId + '?date=' + selectedDate;
+        }
+    </script>
+</body>
+</html>

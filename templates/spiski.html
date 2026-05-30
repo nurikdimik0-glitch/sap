@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои списки</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .add-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        #taskInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #addBtn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #addBtn:hover {
+            background: #5a67d8;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+
+        .stats span {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .task-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .task-item:hover {
+            background: #f0f0f0;
+        }
+
+        .task-checkbox {
+            margin-right: 15px;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .completed {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .delete-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .delete-btn:hover {
+            background: #ee5a5a;
+        }
+
+        .clear-btn {
+            width: 100%;
+            padding: 12px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .clear-btn:hover {
+            background: #ee5a5a;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Мои списки</h1>
+        <div class="subtitle">Серверная версия — общие для всех задачи</div>
+
+        <div class="add-section">
+            <input type="text" id="taskInput" placeholder="Что нужно сделать?">
+            <button id="addBtn">➕ Добавить</button>
+        </div>
+
+        <div class="stats">
+            <div>Всего: <span id="totalCount">0</span></div>
+            <div>✅ Выполнено: <span id="completedCount">0</span></div>
+            <div>⏳ Осталось: <span id="remainingCount">0</span></div>
+        </div>
+
+        <ul class="task-list" id="taskList">
+            <li class="empty-message">✨ Загрузка задач...</li>
+        </ul>
+
+        <button class="clear-btn" id="clearBtn">🗑️ Очистить все выполненные</button>
+    </div>
+
+    <script>
+        let tasks = [];
+
+        // Загрузка задач с сервера
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                tasks = await response.json();
+                renderTasks();
+            } catch (error) {
+                console.error('Ошибка загрузки:', error);
+            }
+        }
+
+        // Добавление задачи на сервер
+        async function addTask() {
+            const input = document.getElementById('taskInput');
+            const text = input.value.trim();
+
+            if (text === '') {
+                alert('Введите текст задачи!');
+                return;
+            }
+
+            const newTask = {
+                id: Date.now(),
+                text: text,
+                completed: false
+            };
+
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(newTask)
+                });
+                const savedTask = await response.json();
+                tasks.push(savedTask);
+                input.value = '';
+                renderTasks();
+            } catch (error) {
+                console.error('Ошибка добавления:', error);
+            }
+        }
+
+        // Удаление задачи с сервера
+        async function deleteTask(id) {
+            try {
+                await fetch(`/api/tasks/${id}`, {method: 'DELETE'});
+                tasks = tasks.filter(task => task.id !== id);
+                renderTasks();
+            } catch (error) {
+                console.error('Ошибка удаления:', error);
+            }
+        }
+
+        // Переключение статуса на сервере
+        async function toggleTask(id) {
+            const task = tasks.find(task => task.id === id);
+            if (task) {
+                task.completed = !task.completed;
+                try {
+                    await fetch(`/api/tasks/${id}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({completed: task.completed})
+                    });
+                    renderTasks();
+                } catch (error) {
+                    console.error('Ошибка обновления:', error);
+                }
+            }
+        }
+
+        // Очистка выполненных на сервере
+        async function clearCompleted() {
+            try {
+                await fetch('/api/tasks/completed', {method: 'DELETE'});
+                tasks = tasks.filter(task => !task.completed);
+                renderTasks();
+            } catch (error) {
+                console.error('Ошибка очистки:', error);
+            }
+        }
+
+        // Отрисовка списка
+        function renderTasks() {
+            const taskList = document.getElementById('taskList');
+            const totalCount = document.getElementById('totalCount');
+            const completedCount = document.getElementById('completedCount');
+            const remainingCount = document.getElementById('remainingCount');
+
+            const total = tasks.length;
+            const completed = tasks.filter(t => t.completed).length;
+            const remaining = total - completed;
+
+            totalCount.textContent = total;
+            completedCount.textContent = completed;
+            remainingCount.textContent = remaining;
+
+            if (total === 0) {
+                taskList.innerHTML = '<li class="empty-message">✨ Пока нет задач. Добавь первую!</li>';
+                return;
+            }
+
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const li = document.createElement('li');
+                li.className = 'task-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'task-checkbox';
+                checkbox.checked = task.completed;
+                checkbox.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleTask(task.id);
+                };
+
+                const span = document.createElement('span');
+                span.className = 'task-text ' + (task.completed ? 'completed' : '');
+                span.textContent = task.text;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '✖';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteTask(task.id);
+                };
+
+                li.appendChild(checkbox);
+                li.appendChild(span);
+                li.appendChild(deleteBtn);
+                li.onclick = () => toggleTask(task.id);
+
+                taskList.appendChild(li);
+            });
+        }
+
+        // Настройка обработчиков
+        document.getElementById('addBtn').onclick = addTask;
+        document.getElementById('clearBtn').onclick = clearCompleted;
+        document.getElementById('taskInput').onkeypress = (e) => {
+            if (e.key === 'Enter') addTask();
+        };
+
+        // Загружаем задачи при старте
+        loadTasks();
+    </script>
+</body>
+</html>

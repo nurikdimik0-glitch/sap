@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои очереди - Электронная очередь</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .queue-item {
+            background: #f7f7f7;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .position {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            background: #e53e3e;
+            color: white;
+        }
+        .btn-back {
+            background: #718096;
+        }
+        .empty {
+            text-align: center;
+            color: #666;
+            padding: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h2>👋 {{ fullname }}</h2>
+                <p>Логин: {{ user }}</p>
+            </div>
+            <a href="/student" class="btn btn-back">Назад</a>
+        </div>
+
+        <div class="card">
+            <h2>📌 Мои очереди</h2>
+            {% if my_queues %}
+                {% for queue in my_queues %}
+                <div class="queue-item">
+                    <div>
+                        <strong>{{ queue.teacher_name }}</strong>
+                        <div>Позиция: <span class="position">#{{ queue.position }}</span></div>
+                        <div style="font-size: 12px; color: #666;">{{ queue.time }}</div>
+                    </div>
+                    <a href="/leave_specific_queue/{{ queue.teacher_id }}" class="btn">Выйти</a>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">📭 Вы не записаны ни в одну очередь</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
